@@ -1,0 +1,36 @@
+# =========================
+# Python Cache & Compiled Files
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# =========================
+# Virtual Environments
+# =========================
+venv/
+.venv/
+env/
+.env_folder/
+
+# =========================
+# Environment Variables & Secrets
+# =========================
+.env
+.env.local
+.env.*
+
+# =========================
+# Logs & Databases
+# =========================
+*.log
+*.sqlite3
+*.db
+
+# =========================
+# IDEs & Editors
+# =========================
+.vscode/
+.idea/
+*.swp
