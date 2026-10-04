@@ -1,5 +1,9 @@
+import json
+
 from langchain_core.messages import BaseMessage
+
 from services.context.configuration import ContextConfiguration
+
 
 class ContextBuilder:
 
@@ -8,6 +12,10 @@ class ContextBuilder:
         configuration: ContextConfiguration,
     ):
         self.configuration = configuration
+
+    # ========================================================
+    # History
+    # ========================================================
 
     def build_history(
         self,
@@ -26,8 +34,10 @@ class ContextBuilder:
         # most recent conversation is preserved.
         for message in reversed(history):
 
-            message_tokens = self._estimate_tokens(
-                message
+            message_tokens = (
+                self._estimate_message_tokens(
+                    message
+                )
             )
 
             if (
@@ -37,25 +47,169 @@ class ContextBuilder:
             ):
                 break
 
-            selected.append(message)
+            selected.append(
+                message
+            )
+
             current_tokens += message_tokens
 
         selected.reverse()
 
         return selected
 
-    def _estimate_tokens(
+    # ========================================================
+    # Retrieved Context
+    # ========================================================
+
+    def build_retrieved_context(
+        self,
+        results: list,
+    ) -> list:
+
+        max_tokens = (
+            self.configuration.max_retrieved_tokens
+        )
+
+        selected = []
+
+        current_tokens = 0
+
+        for result in results:
+
+            text = self._extract_result_text(
+                result
+            )
+
+            result_tokens = (
+                self._estimate_text_tokens(
+                    text
+                )
+            )
+
+            if (
+                current_tokens + result_tokens
+                > max_tokens
+            ):
+                continue
+
+            selected.append(
+                result
+            )
+
+            current_tokens += result_tokens
+
+        return selected
+
+    # ========================================================
+    # Tool Results
+    # ========================================================
+
+    def build_tool_results(
+        self,
+        tool_results: list[dict],
+    ) -> list[dict]:
+
+        max_tokens = (
+            self.configuration.max_tool_tokens
+        )
+
+        selected: list[dict] = []
+
+        current_tokens = 0
+
+        for result in tool_results:
+
+            text = json.dumps(
+                result,
+                ensure_ascii=False,
+            )
+
+            result_tokens = (
+                self._estimate_text_tokens(
+                    text
+                )
+            )
+
+            if (
+                current_tokens + result_tokens
+                > max_tokens
+            ):
+                continue
+
+            selected.append(
+                result
+            )
+
+            current_tokens += result_tokens
+
+        return selected
+
+    # ========================================================
+    # Token Estimation
+    # ========================================================
+
+    def estimate_tokens(
+        self,
+        text: str,
+    ) -> int:
+
+        return self._estimate_text_tokens(
+            text
+        )
+
+    def _estimate_text_tokens(
+        self,
+        text: str,
+    ) -> int:
+
+        if not text:
+            return 0
+
+        return max(
+            1,
+            len(text) // 4,
+        )
+
+    def _estimate_message_tokens(
         self,
         message: BaseMessage,
     ) -> int:
 
         content = message.content
 
-        if not isinstance(content, str):
-            content = str(content)
+        if not isinstance(
+            content,
+            str,
+        ):
 
-        # Rough cross-provider estimation.
-        return max(
-            1,
-            len(content) // 4,
+            content = str(
+                content
+            )
+
+        return self._estimate_text_tokens(
+            content
         )
+
+    def _extract_result_text(
+        self,
+        result,
+    ) -> str:
+
+        node = getattr(
+            result,
+            "node",
+            None,
+        )
+
+        if node is not None:
+
+            text = getattr(
+                node,
+                "text",
+                None,
+            )
+
+            if text is not None:
+                return str(text)
+
+        return str(result)

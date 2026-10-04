@@ -173,15 +173,24 @@ class Brain:
 
         elif router_result.route == "rag":
 
-            rag_result = self.rag.answer(
+            retrieved_results = self.rag.retrieve(
                 question
+            )
+
+            self.context_manager.prepare_retrieved_context(
+                context=context,
+                results=retrieved_results,
+            )
+
+            rag_result = self.rag.generate(
+                question=question,
+                results=context.retrieved_context,
             )
 
             response = BrainResponse(
                 content=rag_result.content,
                 display_type=rag_result.display_type,
             )
-
         # ----------------------------------------------------
         # Loop
         # ----------------------------------------------------

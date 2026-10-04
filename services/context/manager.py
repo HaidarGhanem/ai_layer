@@ -18,6 +18,10 @@ class ContextManager:
         self.memory = memory
         self.builder = builder
 
+    # ========================================================
+    # Build Context
+    # ========================================================
+
     def build(
         self,
         session_id: str,
@@ -45,6 +49,50 @@ class ContextManager:
                 ),
             ],
         )
+
+    # ========================================================
+    # Retrieved Context
+    # ========================================================
+
+    def prepare_retrieved_context(
+        self,
+        context: AIContext,
+        results: list,
+    ) -> list:
+
+        selected = (
+            self.builder.build_retrieved_context(
+                results
+            )
+        )
+
+        context.retrieved_context = selected
+
+        return selected
+
+    # ========================================================
+    # Tool Results
+    # ========================================================
+
+    def prepare_tool_results(
+        self,
+        context: AIContext,
+        tool_results: list[dict],
+    ) -> list[dict]:
+
+        selected = (
+            self.builder.build_tool_results(
+                tool_results
+            )
+        )
+
+        context.tool_results = selected
+
+        return selected
+
+    # ========================================================
+    # Save Response
+    # ========================================================
 
     def save_response(
         self,
