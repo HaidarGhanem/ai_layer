@@ -7,3 +7,4 @@ class ToolDefinition:
     description: str
     input_schema: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+    tool_id: str | None = None

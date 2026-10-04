@@ -8,3 +8,7 @@ from . import resolver
 from . import register
 from . import selector
 from . import selection
+from . import identity
+from . import fingerprint
+from . import record
+from . import lifecycle
