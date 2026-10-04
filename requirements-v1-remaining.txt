@@ -1,0 +1,7 @@
+# Existing AI Core dependencies are already installed in the project venv.
+# This file contains only the dependencies introduced by the final V1 layer.
+
+fastapi>=0.115
+uvicorn[standard]>=0.30
+httpx>=0.27
+langsmith>=0.14
