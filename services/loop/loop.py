@@ -1,10 +1,10 @@
-from langgraph.types import Command
-
 from services.loop.graph import LoopGraph
 from services.loop.result import LoopResult
 from services.loop.state import LoopState
 
 from services.prompts.loop import get_loop_prompt
+
+from services.context.builder import ContextBuilder
 
 
 class Loop:
@@ -15,14 +15,23 @@ class Loop:
         tool_selector,
         tool_registry,
         risk_engine,
+        context_builder: ContextBuilder,
         checkpointer=None,
     ):
 
         self.llm = llm
 
-        self.tool_selector = tool_selector
+        self.tool_selector = (
+            tool_selector
+        )
 
-        self.tool_registry = tool_registry
+        self.tool_registry = (
+            tool_registry
+        )
+
+        self.context_builder = (
+            context_builder
+        )
 
         self.prompt = get_loop_prompt()
 
@@ -30,6 +39,7 @@ class Loop:
             llm=llm,
             tool_registry=tool_registry,
             risk_engine=risk_engine,
+            context_builder=context_builder,
             checkpointer=checkpointer,
         )
 
@@ -38,7 +48,7 @@ class Loop:
         question: str,
         history: list | None = None,
         thread_id: str | None = None,
-    ) -> LoopResult:
+    ):
 
         selected_tools = (
             self.tool_selector.select(
@@ -102,7 +112,9 @@ class Loop:
         self,
         thread_id: str,
         approved: bool,
-    ) -> LoopResult:
+    ):
+
+        from langgraph.types import Command
 
         config = {
             "configurable": {
@@ -124,7 +136,7 @@ class Loop:
     def _build_result(
         self,
         result,
-    ) -> LoopResult:
+    ):
 
         interrupts = result.get(
             "__interrupt__"

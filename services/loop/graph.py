@@ -9,6 +9,8 @@ from langgraph.prebuilt import ToolNode
 from services.loop.nodes import LoopNodes
 from services.loop.state import LoopState
 
+from services.context.builder import ContextBuilder
+
 from services.risk.engine import RiskEngine
 from services.risk.node import RiskNode
 
@@ -20,6 +22,7 @@ class LoopGraph:
         llm,
         tool_registry,
         risk_engine: RiskEngine,
+        context_builder: ContextBuilder,
         checkpointer=None,
     ):
 
@@ -28,6 +31,7 @@ class LoopGraph:
         self.nodes = LoopNodes(
             llm=llm,
             tool_registry=tool_registry,
+            context_builder=context_builder,
         )
 
         self.risk_node = RiskNode(
@@ -98,7 +102,9 @@ class LoopGraph:
         state: LoopState,
     ):
 
-        last_message = state["messages"][-1]
+        last_message = (
+            state["messages"][-1]
+        )
 
         if getattr(
             last_message,
@@ -115,9 +121,10 @@ class LoopGraph:
         state: LoopState,
     ):
 
-        if state.get(
-            "risk_action"
-        ) == "allow":
+        if (
+            state.get("risk_action")
+            == "allow"
+        ):
 
             return "tools"
 
@@ -133,7 +140,7 @@ class LoopGraph:
             state,
             config=config,
         )
-
+    
 # from langgraph.graph import StateGraph, START, END
 # from langgraph.prebuilt import ToolNode, tools_condition
 # from services.loop.nodes import LoopNodes

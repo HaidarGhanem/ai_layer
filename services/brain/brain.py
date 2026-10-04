@@ -21,6 +21,9 @@ class Brain:
         manager,
         retriever,
         tool_selector: ToolSelector | None = None,
+        tool_registry=None,
+        risk_engine=None,
+        checkpointer=None,
         context_manager: ContextManager | None = None,
         context_configuration: ContextConfiguration | None = None,
     ):
@@ -47,11 +50,20 @@ class Brain:
                 ),
             )
 
+        self.context_builder = self.context_manager.builder
+
         # ====================================================
-        # Tool Selector
+        # Tool System
         # ====================================================
 
         self.tool_selector = tool_selector
+        self.tool_registry = tool_registry
+
+        # ====================================================
+        # Risk
+        # ====================================================
+
+        self.risk_engine = risk_engine
 
         # ====================================================
         # Router
@@ -89,6 +101,10 @@ class Brain:
                 "loop"
             ),
             tool_selector=self.tool_selector,
+            tool_registry=self.tool_registry,
+            risk_engine=self.risk_engine,
+            context_builder=self.context_builder,
+            checkpointer=checkpointer,
         )
 
     # ========================================================
@@ -100,6 +116,10 @@ class Brain:
         question: str,
         session_id: str,
     ):
+
+        # ----------------------------------------------------
+        # Build Context
+        # ----------------------------------------------------
 
         context = self.context_manager.build(
             session_id=session_id,
@@ -191,6 +211,7 @@ class Brain:
                 content=rag_result.content,
                 display_type=rag_result.display_type,
             )
+
         # ----------------------------------------------------
         # Loop
         # ----------------------------------------------------
@@ -206,6 +227,7 @@ class Brain:
             loop_result = self.loop.run(
                 question=question,
                 history=context.messages[:-1],
+                thread_id=session_id,
             )
 
             response = BrainResponse(

@@ -1,5 +1,3 @@
-import json
-
 from langchain_core.messages import BaseMessage
 
 from services.context.configuration import ContextConfiguration
@@ -30,8 +28,6 @@ class ContextBuilder:
 
         current_tokens = 0
 
-        # Start from the newest message so the
-        # most recent conversation is preserved.
         for message in reversed(history):
 
             message_tokens = (
@@ -119,10 +115,7 @@ class ContextBuilder:
 
         for result in tool_results:
 
-            text = json.dumps(
-                result,
-                ensure_ascii=False,
-            )
+            text = str(result)
 
             result_tokens = (
                 self._estimate_text_tokens(
@@ -145,6 +138,82 @@ class ContextBuilder:
         return selected
 
     # ========================================================
+    # Tool Messages For LLM
+    # ========================================================
+
+    def build_tool_messages(
+        self,
+        messages: list[BaseMessage],
+    ) -> list[BaseMessage]:
+
+        max_tokens = (
+            self.configuration.max_tool_tokens
+        )
+
+        remaining_characters = (
+            max_tokens * 4
+        )
+
+        result: list[BaseMessage] = []
+
+        for message in messages:
+
+            if message.type != "tool":
+
+                result.append(
+                    message
+                )
+
+                continue
+
+            content = message.content
+
+            if not isinstance(
+                content,
+                str,
+            ):
+                content = str(
+                    content
+                )
+
+            if remaining_characters <= 0:
+
+                compact_content = (
+                    "[Tool result omitted "
+                    "because the tool context "
+                    "budget was exceeded.]"
+                )
+
+            else:
+
+                compact_content = (
+                    content[
+                        :remaining_characters
+                    ]
+                )
+
+                remaining_characters -= len(
+                    compact_content
+                )
+
+            # Keep the original message object
+            # unchanged. Create a bounded copy
+            # only for the LLM input.
+            bounded_message = (
+                message.model_copy(
+                    update={
+                        "content": compact_content
+                    }
+                )
+            )
+
+            result.append(
+                bounded_message
+            )
+
+        return result
+
+    # ========================================================
     # Token Estimation
     # ========================================================
 
@@ -163,6 +232,7 @@ class ContextBuilder:
     ) -> int:
 
         if not text:
+
             return 0
 
         return max(
@@ -190,6 +260,10 @@ class ContextBuilder:
             content
         )
 
+    # ========================================================
+    # Result Text Extraction
+    # ========================================================
+
     def _extract_result_text(
         self,
         result,
@@ -210,6 +284,11 @@ class ContextBuilder:
             )
 
             if text is not None:
-                return str(text)
 
-        return str(result)
+                return str(
+                    text
+                )
+
+        return str(
+            result
+        )
