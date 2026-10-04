@@ -36,3 +36,12 @@ class VectorStore:
 
     def get_backend(self):
         return self.store
+
+    def delete(
+    self,
+    ref_doc_id: str,
+    ):
+
+        return self.store.delete(
+            ref_doc_id
+        )

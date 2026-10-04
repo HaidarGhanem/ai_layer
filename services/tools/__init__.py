@@ -12,3 +12,4 @@ from . import identity
 from . import fingerprint
 from . import record
 from . import lifecycle
+from . import synchronizer
